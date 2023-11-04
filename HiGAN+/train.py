@@ -4,7 +4,7 @@ import argparse
 
 from lib.utils import yaml2config
 from networks import get_model
-
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="config")

@@ -1,18 +1,19 @@
 device: 'cuda:0'
-model: 'gl_adversarial_model'
-dataset: 'iam_word_org'
+# model: 'gl_adversarial_model'
+dataset: 'vie_textline_ds'
 seed: 123456
 img_height: 64
 char_width: 32
 
 
 training:
-  dset_split: 'trnval'
+  # dset_split: 'trnval'
+  dset_split: 'data/training_data/train_annot.txt'
   epochs: 70
   lr_policy: 'linear'
   start_decay_epoch: 25
   n_epochs_decay: 46
-  batch_size: 8
+  batch_size: 2
   eval_batch_size: 8
   sample_nrow: 3
   # optimization:
@@ -26,9 +27,10 @@ training:
   save_epoch_val: 2
   sample_dir: 'imgs'
   ckpt_dir: 'ckpts'
-  lexicon: './data/english_words.txt'
+  # lexicon: './data/english_words.txt'
+  lexicon: './data/vietnamese_words.txt'
   max_word_len: 20
-  n_class: 80
+  n_class: 229
   capitalize_ratio: 0.5
   blank_ratio: 0.
   sort_input: true
@@ -44,10 +46,11 @@ training:
 
 valid:
   dset_name: 'iam_word_org'
-  dset_split: 'test'
+  # dset_split: 'test'
+  dset_split: 'data/training_data/test_annot.txt'
   use_rand_corpus: false
   n_rand_repeat: 10
-  batch_size: 32
+  batch_size: 2
   dims: 2048
   mmd_degree: 3
   mmd_gamma: ~
@@ -68,7 +71,7 @@ valid:
     beam_width: 32
     cutoff_prob: 0.9999
     cutoff_top_n: 32
-    num_processes: 8
+    num_processes: 0
 
 
 test:
@@ -85,7 +88,7 @@ GenModel:
   resolution: 64
   G_kernel_size: 3
   G_attn: '0'
-  n_class: 80
+  n_class: 229
   embed_dim: 120
   embed_pad_idx: 0
   embed_max_norm: 1.0
@@ -108,7 +111,7 @@ DiscModel:
   resolution: 64
   D_kernel_size: 3
   D_attn: '0'
-  n_class: 80
+  n_class: 229
   num_D_SVs: 1
   num_D_SV_itrs: 1
   SN_eps: 1.e-08
@@ -126,7 +129,7 @@ PatchDiscModel:
   resolution: 32
   D_kernel_size: 3
   D_attn: '0'
-  n_class: 80
+  n_class: 229
   num_D_SVs: 1
   num_D_SV_itrs: 1
   SN_eps: 1.e-08
@@ -145,7 +148,7 @@ OcrModel:
   init: 'none'
   dropout: 0.
   # ctc config
-  n_class: 80
+  n_class: 229
   rnn_depth: 2
   bidirectional: true
 
@@ -166,6 +169,6 @@ EncModel:
 
 
 WidModel:
-  n_writer: 372
+  n_writer: 100
   in_dim: 256
   init: 'none'

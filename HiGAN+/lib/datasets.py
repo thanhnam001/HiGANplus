@@ -307,11 +307,74 @@ class ImageDataset(Hdf5Dataset):
             np.array(img_lens).astype(np.int32), np.array(lb_lens).astype(np.int32)
         self.wids = np.zeros((len(all_imgs),)).astype(np.int32)
 
+class TextLineImageDataset(Hdf5Dataset):
+    ImgHeight = 64
+    def __init__(self, *args, **kwargs):
+        super(TextLineImageDataset, self).__init__(*args, **kwargs)
 
+    def _load_h5py(self, annot_dir, normalize_wid=True):
+        annot_dir = os.path.normpath(annot_dir)
+        assert os.path.exists(annot_dir), annot_dir + "does not exist!"
+        img_dir = annot_dir.split(os.sep)[0]
+        all_imgs, all_texts, wids = [], [], []
+        with open(annot_dir,'r',encoding='utf8') as f:
+            annots = f.readlines()
+            annots = list(map(lambda x: x.strip(), annots))
+
+        for annot in annots:
+            file_path, label_text = annot.split('\t')
+            wids.append(file_path.split('/')[-2])
+
+            img = cv2.imread(os.path.join(img_dir, file_path), cv2.IMREAD_GRAYSCALE)
+
+            # Normalize image-height
+            h, w = img.shape[:2]
+            r = self.ImgHeight / float(h)
+            new_w = max(int(w * r), int(ImgHeight / 4 * len(label_text)))
+            dim = (new_w, ImgHeight)
+            if new_w < w:
+                resize_img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+            else:
+                resize_img = cv2.resize(img, dim, interpolation=cv2.INTER_LINEAR)
+            res_img = 255 - resize_img
+
+            all_imgs.append(res_img)
+            all_texts.append(label_text)
+
+        '''========prepare image dataset==========='''
+        img_seek_idxs, img_lens = [], []
+        cur_seek_idx = 0
+        for img in all_imgs:
+            img_seek_idxs.append(cur_seek_idx)
+            img_lens.append(img.shape[-1])
+            cur_seek_idx += img.shape[-1]
+
+        lb_seek_idxs, lb_lens = [], []
+        cur_seek_idx = 0
+        for lb in all_texts:
+            lb_seek_idxs.append(cur_seek_idx)
+            lb_lens.append(len(lb))
+            cur_seek_idx += len(lb)
+
+        self.imgs = np.concatenate(all_imgs, axis=-1).astype(np.uint8)
+        save_texts = list(itertools.chain(*all_texts))
+        self.lbs = [ord(ch) for ch in save_texts]
+        self.img_seek_idxs, self.lb_seek_idxs =\
+            np.array(img_seek_idxs).astype(np.int64), np.array(lb_seek_idxs).astype(np.int64)
+        self.img_lens, self.lb_lens = \
+            np.array(img_lens).astype(np.int32), np.array(lb_lens).astype(np.int32)
+        wids = np.array(wids).astype(np.int32)
+        unique_wids = np.unique(wids)
+        sorted_wids = np.sort(unique_wids)
+        mapping = {wid:i for i,wid in enumerate(sorted_wids)}
+        self.wids = np.array([mapping[wid] for wid in wids]).astype(np.int32)
+        # self.wids = np.zeros((len(all_imgs),)).astype(np.int32)
+    
 def get_dataset(dset_name, split, wid_aug=False, recogn_aug=False, process_style=False):
     name = dset_name.strip()
     tag = name.split('_')[0]
-    alphabet_key = 'rimes_word' if tag.startswith('rimes') else 'all'
+    # alphabet_key = 'rimes_word' if tag.startswith('rimes') else 'all'
+    alphabet_key = 'vie_textline'
 
     transforms = [ToTensor(), Normalize([0.5], [0.5])]
     if recogn_aug:
@@ -325,6 +388,11 @@ def get_dataset(dset_name, split, wid_aug=False, recogn_aug=False, process_style
 
     if dset_name.startswith('custom'):
         dataset = ImageDataset(root=split, split='',
+                               transforms=transforms,
+                               alphabet_key=alphabet_key,
+                               process_style=process_style)
+    elif dset_name.startswith('vie_textline'):
+        dataset = TextLineImageDataset(root=split, split='',
                                transforms=transforms,
                                alphabet_key=alphabet_key,
                                process_style=process_style)

@@ -35,7 +35,7 @@ class BaseModel(object):
         self.log_root = log_root
         self.logger = None
         self.writer = None
-        alphabet_key = 'rimes_word' if opt.dataset.startswith('rimes') else 'all'
+        alphabet_key = 'vie_textline'#'rimes_word' if opt.dataset.startswith('rimes') else 'all'
         self.alphabet = Alphabets[alphabet_key]
         self.label_converter = strLabelConverter(alphabet_key)
 
@@ -137,11 +137,11 @@ class AdversarialModel(BaseModel):
     def __init__(self, opt, log_root='./'):
         super(AdversarialModel, self).__init__(opt, log_root)
 
-        self.lexicon = get_lexicon(self.opt.training.lexicon,
-                                   get_true_alphabet(opt.dataset),
-                                   max_length=self.opt.training.max_word_len)
+        self.lexicon = get_lexicon(self.opt.training.lexicon, # englist
+                                   get_true_alphabet(opt.dataset), # iam_word
+                                   max_length=self.opt.training.max_word_len) # 20 
         self.max_valid_image_width = self.opt.char_width * self.opt.training.max_word_len
-        self.vae_mode = self.opt.training.vae_mode
+        self.vae_mode = self.opt.training.vae_mode # true
         self.collect_fn = get_collect_fn(self.opt.training.sort_input, sort_style=True)
         self.train_loader = DataLoader(
             get_dataset(opt.dataset, opt.training.dset_split,
@@ -149,7 +149,7 @@ class AdversarialModel(BaseModel):
             batch_size=opt.training.batch_size,
             shuffle=True,
             collate_fn=self.collect_fn,
-            num_workers=4,
+            num_workers=0,
             drop_last=True
         )
 
@@ -287,7 +287,7 @@ class AdversarialModel(BaseModel):
             collate_fn=self.collect_fn,
             batch_size=self.opt.valid.batch_size,
             shuffle=False,
-            num_workers=4
+            num_workers=0
         )
 
         if 'E' not in self.models:
@@ -1017,7 +1017,7 @@ class RecognizeModel(BaseModel):
             batch_size=self.opt.training.batch_size,
             shuffle=True,
             collate_fn=self.collect_fn,
-            num_workers=4
+            num_workers=0
         )
 
         self.optimizers = Munch(R=torch.optim.Adam(self.models.R.parameters(), lr=self.opt.training.lr))
@@ -1189,7 +1189,7 @@ class WriterIdentifyModel(BaseModel):
             batch_size=self.opt.training.batch_size,
             shuffle=True,
             collate_fn=get_collect_fn(sort_input=True, sort_style=False),
-            num_workers=4
+            num_workers=0
         )
 
         if self.opt.training.frozen_backbone:
