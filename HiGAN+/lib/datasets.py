@@ -315,7 +315,7 @@ class TextLineImageDataset(Hdf5Dataset):
     def _load_h5py(self, annot_dir, normalize_wid=True):
         annot_dir = os.path.normpath(annot_dir)
         assert os.path.exists(annot_dir), annot_dir + "does not exist!"
-        img_dir = annot_dir.split(os.sep)[0]
+        img_dir = '/'.join(annot_dir.split(os.sep)[0:-2])
         all_imgs, all_texts, wids = [], [], []
         with open(annot_dir,'r',encoding='utf8') as f:
             annots = f.readlines()
